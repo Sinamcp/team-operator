@@ -45,10 +45,7 @@ const (
 )
 
 const (
-	baseNs        = "snappcloud-monitoring"
-	baseSa        = "monitoring-datasource"
-	prometheusURL = "https://thanos-querier-custom.openshift-monitoring.svc.cluster.local:9092"
-	teamLabel     = "snappcloud.io/team"
+	teamLabel = "snappcloud.io/team"
 )
 
 // Get Grafana URL and PassWord as a env.
@@ -99,49 +96,6 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	} else {
 		log.Info("team is found and teamName is : " + team.Name)
 
-	}
-	// Getting serviceAccount
-	log.Info("Getting serviceAccount", "serviceAccount.Name", baseSa, "Namespace.Name", req.NamespacedName)
-	sa := &corev1.ServiceAccount{}
-	err = r.Get(ctx, types.NamespacedName{Name: baseSa, Namespace: req.Name}, sa)
-	if err != nil {
-		log.Error(err, "Unable to get ServiceAccount")
-		return ctrl.Result{}, err
-	}
-	// Getting serviceaccount token
-	secret := &corev1.Secret{}
-	var token string
-	for _, ref := range sa.Secrets {
-		log.Info("Getting secret", "secret.Name", ref.Name, "Namespace.Name", req.Name)
-		// get secret
-		err = r.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: req.Name}, secret)
-		if err != nil {
-			log.Error(err, "Unable to get Secret")
-			return ctrl.Result{}, err
-		}
-
-		// Check if secret is a token for the serviceaccount
-		if secret.Type != corev1.SecretTypeServiceAccountToken {
-			continue
-		}
-		name := secret.Annotations[corev1.ServiceAccountNameKey]
-		uid := secret.Annotations[corev1.ServiceAccountUIDKey]
-		tokenData := secret.Data[corev1.ServiceAccountTokenKey]
-		//tmp
-		log.Info("Token data", "token", string(tokenData))
-		log.Info("Token meta", "name", name, "uid", uid, "ref.Name", ref.Name, "ref.UID", ref.UID)
-		if name == sa.Name && uid == string(sa.UID) && len(tokenData) > 0 {
-			// found token, the first token found is used
-			token = string(tokenData)
-			log.Info("Found token", "token", token)
-			break
-		}
-
-	}
-	// if no token found
-	if token == "" {
-		log.Error(fmt.Errorf("did not found service account token for service account %q", sa.Name), "")
-		return ctrl.Result{}, err
 	}
 	r.createArgocdStaticAdminUser(ctx, req)
 	r.createArgocdStaticViewUser(ctx, req)
