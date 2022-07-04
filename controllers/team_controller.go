@@ -359,7 +359,6 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	log := log.FromContext(ctx)
 	team := &teamv1alpha1.Team{}
 	ns := &corev1.Namespace{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
 	org := ns.GetLabels()[teamLabel]
 
 	// Connecting to the Grafana API
