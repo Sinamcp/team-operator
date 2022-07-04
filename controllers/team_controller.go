@@ -20,8 +20,11 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"encoding/json"
+	"fmt"
+	"os"
 	"strings"
 
+	"github.com/grafana-tools/sdk"
 	userv1 "github.com/openshift/api/user/v1"
 	teamv1alpha1 "github.com/snapp-incubator/team-operator/api/v1alpha1"
 	"golang.org/x/crypto/bcrypt"
@@ -40,6 +43,18 @@ const (
 	userArgocRbacPolicyCM = "argocd-rbac-cm"
 	userArgocStaticUserCM = "argocd-cm"
 )
+
+const (
+	baseNs        = "snappcloud-monitoring"
+	baseSa        = "monitoring-datasource"
+	prometheusURL = "https://thanos-querier-custom.openshift-monitoring.svc.cluster.local:9092"
+	teamLabel     = "snappcloud.io/team"
+)
+
+// Get Grafana URL and PassWord as a env.
+var grafanaPassword = os.Getenv("GRAFANA_PASSWORD")
+var grafanaUsername = os.Getenv("GRAFANA_USERNAME")
+var grafanaURL = os.Getenv("GRAFANA_URL")
 
 //var logf = log.Log.WithName("controller_team")
 
@@ -85,8 +100,54 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		log.Info("team is found and teamName is : " + team.Name)
 
 	}
+	// Getting serviceAccount
+	log.Info("Getting serviceAccount", "serviceAccount.Name", baseSa, "Namespace.Name", req.NamespacedName)
+	sa := &corev1.ServiceAccount{}
+	err = r.Get(ctx, types.NamespacedName{Name: baseSa, Namespace: req.Name}, sa)
+	if err != nil {
+		log.Error(err, "Unable to get ServiceAccount")
+		return ctrl.Result{}, err
+	}
+	// Getting serviceaccount token
+	secret := &corev1.Secret{}
+	var token string
+	for _, ref := range sa.Secrets {
+		log.Info("Getting secret", "secret.Name", ref.Name, "Namespace.Name", req.Name)
+		// get secret
+		err = r.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: req.Name}, secret)
+		if err != nil {
+			log.Error(err, "Unable to get Secret")
+			return ctrl.Result{}, err
+		}
+
+		// Check if secret is a token for the serviceaccount
+		if secret.Type != corev1.SecretTypeServiceAccountToken {
+			continue
+		}
+		name := secret.Annotations[corev1.ServiceAccountNameKey]
+		uid := secret.Annotations[corev1.ServiceAccountUIDKey]
+		tokenData := secret.Data[corev1.ServiceAccountTokenKey]
+		//tmp
+		log.Info("Token data", "token", string(tokenData))
+		log.Info("Token meta", "name", name, "uid", uid, "ref.Name", ref.Name, "ref.UID", ref.UID)
+		if name == sa.Name && uid == string(sa.UID) && len(tokenData) > 0 {
+			// found token, the first token found is used
+			token = string(tokenData)
+			log.Info("Found token", "token", token)
+			break
+		}
+
+	}
+	// if no token found
+	if token == "" {
+		log.Error(fmt.Errorf("did not found service account token for service account %q", sa.Name), "")
+		return ctrl.Result{}, err
+	}
 	r.createArgocdStaticAdminUser(ctx, req)
 	r.createArgocdStaticViewUser(ctx, req)
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Admin.Emails, "admin")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "edit")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "view")
 
 	return ctrl.Result{}, nil
 }
@@ -338,6 +399,36 @@ func (r *TeamReconciler) setRBACArgoCDViewUser(ctx context.Context, req ctrl.Req
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	team := &teamv1alpha1.Team{}
+	ns := &corev1.Namespace{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
+	org := ns.GetLabels()[teamLabel]
+
+	// Connecting to the Grafana API
+	client, err := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
+	if err != nil {
+		log.Error(err, "Unable to create Grafana client")
+		return ctrl.Result{}, err
+	} else {
+		for _, email := range emails {
+			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
+			orgID := retrievedOrg.ID
+			newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
+			_, err := client.AddOrgUser(ctx, newuser, orgID)
+			if err != nil {
+				log.Error(err, "Failed to add user to  organization")
+				return ctrl.Result{}, err
+			} else {
+				log.Info(email, "added", "for team", team, "organization name is", retrievedOrg.Name)
+				return ctrl.Result{}, nil
+			}
+		}
+		return ctrl.Result{}, nil
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
