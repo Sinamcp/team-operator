@@ -374,16 +374,20 @@ func (r *TeamReconciler) setRBACArgoCDViewUser(ctx context.Context, req ctrl.Req
 
 func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
+	reqLogger.Info("Reconciling team")
 	team := &teamv1alpha1.Team{}
 	ns := &corev1.Namespace{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
+	err := r.Client.Get(context.TODO(), req.NamespacedName, ns)
+	if err != nil {
+		log.Error(err, "Failed to get team")
+		return ctrl.Result{}, err
+	}
 	org := ns.GetLabels()[teamLabel]
-	fmt.Println(org)
-
 	// Connecting to the Grafana API
 	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
 	if err1 != nil {
-		log.Error(err, "Unable to create Grafana client")
+		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
 		for _, email := range emails {
