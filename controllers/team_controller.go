@@ -377,15 +377,14 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	team := &teamv1alpha1.Team{}
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
-	fmt.Println(ns)
 	org := ns.GetLabels()[teamLabel]
 	fmt.Println(org)
 
 	// Connecting to the Grafana API
-	client, err := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
-	if err != nil {
+	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
+	if err1 != nil {
 		log.Error(err, "Unable to create Grafana client")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, err1
 	} else {
 		for _, email := range emails {
 			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
