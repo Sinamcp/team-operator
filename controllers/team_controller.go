@@ -97,8 +97,8 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		log.Info("team is found and teamName is : " + team.Name)
 
 	}
-	r.createArgocdStaticAdminUser(ctx, req)
-	r.createArgocdStaticViewUser(ctx, req)
+	//r.createArgocdStaticAdminUser(ctx, req)
+	//r.createArgocdStaticViewUser(ctx, req)
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Admin.Emails, "admin")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "edit")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "view")
@@ -359,7 +359,10 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	log := log.FromContext(ctx)
 	team := &teamv1alpha1.Team{}
 	ns := &corev1.Namespace{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
+	fmt.Println(ns)
 	org := ns.GetLabels()[teamLabel]
+	fmt.Println(org)
 
 	// Connecting to the Grafana API
 	client, err := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
