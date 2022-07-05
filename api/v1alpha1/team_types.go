@@ -29,6 +29,7 @@ type TeamSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Team. Edit team_types.go to remove/update
+<<<<<<< HEAD
 	Argo    TeamCICD    `json:"argo,omitempty"`
 	Grafana TeamGrafana `json:"grafana,omitempty"`
 }
@@ -47,6 +48,10 @@ type GrafanaUserview struct {
 	Emails []string `json:"emails,omitempty"`
 }
 
+=======
+	Argo TeamCICD `json:"argo,omitempty"`
+}
+>>>>>>> 674c55fed0b82d7d6b21818821e8cc1bafd145c7
 type TeamCICD struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
