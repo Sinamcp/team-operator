@@ -380,7 +380,7 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, ns)
 	if err != nil {
-		log.Error(err, "Failed to get team")
+		log.Error(err, "Failed to get sina")
 		return ctrl.Result{}, err
 	}
 	org := ns.GetLabels()[teamLabel]
