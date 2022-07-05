@@ -21,7 +21,8 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
+
+	//	"os"
 	"strings"
 
 	"github.com/grafana-tools/sdk"
@@ -50,9 +51,9 @@ const (
 )
 
 // Get Grafana URL and PassWord as a env.
-var grafanaPassword = os.Getenv("GRAFANA_PASSWORD")
-var grafanaUsername = os.Getenv("GRAFANA_USERNAME")
-var grafanaURL = os.Getenv("GRAFANA_URL")
+var grafanaPassword = "xAR6WJKrszFBJsnlHCdoeuA2w2Q10y9E7iJ3J46l3Vpk1yigQl"
+var grafanaUsername = "admin"
+var grafanaURL = "https://grafana.okd4.teh-1.snappcloud.io"
 
 //var logf = log.Log.WithName("controller_team")
 
