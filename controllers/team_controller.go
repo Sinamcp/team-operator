@@ -406,11 +406,9 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 			if err != nil {
 				reqLogger.Info("slm")
 				log.Error(err, "Failed to add user to  organization")
-				return ctrl.Result{}, err
 			} else {
 				reqLogger.Info("bye")
 				log.Info("ok")
-				return ctrl.Result{}, nil
 			}
 		}
 		return ctrl.Result{}, nil
