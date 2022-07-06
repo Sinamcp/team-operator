@@ -21,6 +21,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	//	"strconv"
 
@@ -397,18 +398,16 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	} else {
 		reqLogger.Info("after client")
 		for _, email := range emails {
-			//retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
-			//neworgID := strconv.FormatUint(uint64(orgID), 10)
-			reqLogger.Info(email)
-			//reqLogger.Info(neworgID)
+			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
+			orgID := retrievedOrg.ID
+			neworgID := strconv.FormatUint(uint64(orgID), 10)
+			reqLogger.Info(neworgID)
 
 			newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
-			_, err := client.AddOrgUser(ctx, newuser, 36)
+			_, err := client.AddOrgUser(ctx, newuser, orgID)
 			if err != nil {
-				reqLogger.Info("slm")
 				log.Error(err, "Failed to add user to  organization")
 			} else {
-				reqLogger.Info("bye")
 				log.Info("ok")
 			}
 		}
