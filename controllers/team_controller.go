@@ -391,6 +391,7 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
+		reqLogger.Info("after client")
 		for _, email := range emails {
 			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
 			orgID := retrievedOrg.ID
