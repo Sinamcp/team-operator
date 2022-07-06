@@ -21,7 +21,6 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	//	"strconv"
 
@@ -105,8 +104,8 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	//r.createArgocdStaticAdminUser(ctx, req)
 	//r.createArgocdStaticViewUser(ctx, req)
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Admin.Emails, "admin")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "edit")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "view")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "editor")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "viewer")
 
 	return ctrl.Result{}, nil
 }
@@ -387,32 +386,45 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 	org := ns.GetLabels()[teamLabel]
-	reqLogger.Info(org)
-	reqLogger.Info("before client")
 	// Connecting to the Grafana API
 	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
+	reqLogger.Info("user is in grafana")
+	retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
+	orgID := retrievedOrg.ID
+	getallUser, _ := client.GetAllUsers(ctx)
+	getuserOrg, _ := client.GetOrgUsers(ctx, orgID)
 	if err1 != nil {
-		reqLogger.Info("before log")
 		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
-		reqLogger.Info("after client")
 		for _, email := range emails {
-			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
-			orgID := retrievedOrg.ID
-			neworgID := strconv.FormatUint(uint64(orgID), 10)
-			reqLogger.Info(neworgID)
+			for _, user := range getallUser {
+				UserEmail := user.Email
+				if email == UserEmail {
+					for _, orguser := range getuserOrg {
+						UserOrg := orguser.Email
+						if email == UserOrg {
+							reqLogger.Info("user", email, "is already in", orgID)
+						} else {
+							newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
+							_, err := client.AddOrgUser(ctx, newuser, orgID)
+							if err != nil {
+								log.Error(err, "Failed to add user to  organization")
+							} else {
+								log.Info("ok")
+							}
+						}
+					}
+				} else {
+					reqLogger.Info("user is not at grafana")
 
-			newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
-			_, err := client.AddOrgUser(ctx, newuser, orgID)
-			if err != nil {
-				log.Error(err, "Failed to add user to  organization")
-			} else {
-				log.Info("ok")
+				}
+
 			}
 		}
-		return ctrl.Result{}, nil
+
 	}
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
