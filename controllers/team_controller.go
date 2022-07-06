@@ -378,13 +378,14 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling team")
-	team := &teamv1alpha1.Team{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, team)
+	ns := &corev1.Namespace{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
+
 	if err != nil {
 		log.Error(err, "Failed to get sina")
 		return ctrl.Result{}, err
 	}
-	org := team.GetLabels()[teamLabel]
+	org := ns.GetLabels()[teamLabel]
 	reqLogger.Info(org)
 	reqLogger.Info("before client")
 	// Connecting to the Grafana API
