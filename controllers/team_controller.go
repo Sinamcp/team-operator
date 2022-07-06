@@ -383,10 +383,11 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 	org := team.GetLabels()[teamLabel]
-	fmt.Println(org)
+	reqLogger.Info("before client")
 	// Connecting to the Grafana API
 	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
 	if err1 != nil {
+		reqLogger.Info("before log")
 		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
