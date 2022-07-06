@@ -21,6 +21,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	//	"os"
 	"strings"
@@ -383,6 +384,7 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 	org := team.GetLabels()[teamLabel]
+	reqLogger.Info(org)
 	reqLogger.Info("before client")
 	// Connecting to the Grafana API
 	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
@@ -395,6 +397,10 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		for _, email := range emails {
 			retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
 			orgID := retrievedOrg.ID
+			neworgID := strconv.FormatUint(uint64(orgID), 10)
+			reqLogger.Info(email)
+			reqLogger.Info(neworgID)
+
 			newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
 			_, err := client.AddOrgUser(ctx, newuser, orgID)
 			if err != nil {
