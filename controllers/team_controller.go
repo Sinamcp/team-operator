@@ -404,7 +404,7 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 					for _, orguser := range getuserOrg {
 						UserOrg := orguser.Email
 						if email == UserOrg {
-							reqLogger.Info("user", email, "is already in", orgID)
+							reqLogger.Info("users already in")
 						} else {
 							newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
 							_, err := client.AddOrgUser(ctx, newuser, orgID)
