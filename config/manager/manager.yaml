@@ -29,7 +29,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: docker.io/sinamcp/team-operator:v17
+        image: docker.io/sinamcp/team-operator:v19
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

@@ -397,17 +397,21 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		return ctrl.Result{}, err1
 	} else {
 		for _, email := range emails {
+			reqLogger.Info("for1")
 			for _, orguser := range getuserOrg {
+				reqLogger.Info("for2")
 				UserOrg := orguser.Email
-
 				if email == UserOrg {
 					reqLogger.Info("users already in")
 					break
 				}
 			}
+			reqLogger.Info("for3")
 			for _, user := range getallUser {
+				reqLogger.Info("for4")
 				UserEmail := user.Email
 				if email == UserEmail {
+					reqLogger.Info("for5")
 					reqLogger.Info("user is exist")
 					newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
 					_, err := client.AddOrgUser(ctx, newuser, orgID)
@@ -421,6 +425,7 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 			}
 		}
 	}
+	reqLogger.Info("for6")
 	return ctrl.Result{}, nil
 }
 
