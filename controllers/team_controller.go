@@ -397,31 +397,29 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 		return ctrl.Result{}, err1
 	} else {
 		for _, email := range emails {
+			for _, orguser := range getuserOrg {
+				UserOrg := orguser.Email
+
+				if email == UserOrg {
+					reqLogger.Info("users already in")
+					break
+				}
+			}
 			for _, user := range getallUser {
 				UserEmail := user.Email
 				if email == UserEmail {
-					for _, orguser := range getuserOrg {
-						UserOrg := orguser.Email
-						if email == UserOrg {
-							reqLogger.Info("users already in")
-						} else {
-							newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
-							_, err := client.AddOrgUser(ctx, newuser, orgID)
-							if err != nil {
-								log.Error(err, "Failed to add user to  organization")
-							} else {
-								log.Info("ok")
-							}
-						}
+					reqLogger.Info("user is exist")
+					newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
+					_, err := client.AddOrgUser(ctx, newuser, orgID)
+					if err != nil {
+						log.Error(err, "Failed to add user to  organization")
+					} else {
+						log.Info("ok")
 					}
-				} else {
-					reqLogger.Info("user is not at grafana")
-
+					break
 				}
-
 			}
 		}
-
 	}
 	return ctrl.Result{}, nil
 }
