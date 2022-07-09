@@ -398,13 +398,19 @@ func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ct
 	} else {
 		for _, email := range emails {
 			reqLogger.Info("for1")
+			var orguserfound bool
 			for _, orguser := range getuserOrg {
 				reqLogger.Info("for2")
 				UserOrg := orguser.Email
+				reqLogger.Info(UserOrg)
 				if email == UserOrg {
+					orguserfound = true
 					reqLogger.Info("users already in")
 					break
 				}
+			}
+			if orguserfound {
+				continue
 			}
 			reqLogger.Info("for3")
 			for _, user := range getallUser {
