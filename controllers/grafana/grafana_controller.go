@@ -51,6 +51,9 @@ type GrafanaReconciler struct {
 //+kubebuilder:rbac:groups=grafana.snappcloud.io,resources=grafanas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=grafana.snappcloud.io,resources=grafanas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=grafana.snappcloud.io,resources=grafanas/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=user.openshift.io,resources=*,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -64,7 +67,7 @@ type GrafanaReconciler struct {
 func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("Reconciling team")
+	reqLogger.Info("Reconciling grafana")
 	grafana := &grafanav1alpha1.Grafana{}
 	team := &teamv1alpha1.Team{}
 
@@ -82,7 +85,7 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Info("team is found and teamName is : " + team.Name)
 
 	}
-
+	reqLogger.Info("step1")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.View.Emails, "viewer")
@@ -92,12 +95,12 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("Reconciling team")
+	reqLogger.Info("step2")
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
 
 	if err != nil {
-		log.Error(err, "Failed to get sina")
+		log.Error(err, "Failed to get namespace")
 		return ctrl.Result{}, err
 	}
 	org := ns.GetLabels()[teamLabel]
@@ -107,10 +110,12 @@ func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req
 	orgID := retrievedOrg.ID
 	getallUser, _ := client.GetAllUsers(ctx)
 	getuserOrg, _ := client.GetOrgUsers(ctx, orgID)
+	reqLogger.Info("step3")
 	if err1 != nil {
 		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
+		reqLogger.Info("step4")
 		for _, email := range emails {
 			var orguserfound bool
 			for _, orguser := range getuserOrg {
@@ -126,6 +131,7 @@ func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req
 				continue
 			}
 			for _, user := range getallUser {
+				reqLogger.Info("step5")
 				UserEmail := user.Email
 				if email == UserEmail {
 					reqLogger.Info("user is exist")
