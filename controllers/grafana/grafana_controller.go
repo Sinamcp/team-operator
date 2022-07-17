@@ -65,6 +65,7 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling team")
+	grafana := &grafanav1alpha1.Grafana{}
 	team := &teamv1alpha1.Team{}
 
 	err := r.Client.Get(context.TODO(), req.NamespacedName, team)
@@ -82,9 +83,9 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	}
 
-	//r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Admin.Emails, "admin")
-	//r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "editor")
-	//r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "viewer")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
+	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.View.Emails, "viewer")
 
 	return ctrl.Result{}, nil
 }
