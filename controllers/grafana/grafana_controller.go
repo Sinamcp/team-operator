@@ -65,9 +65,9 @@ type GrafanaReconciler struct {
 func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("Reconciling grafana")
-	grafana := &grafanav1alpha1.Grafana{}
 
+	reqLogger.Info("Reconciling grafana11")
+	grafana := &grafanav1alpha1.Grafana{}
 	reqLogger.Info("step1")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
