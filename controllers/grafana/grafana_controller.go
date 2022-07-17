@@ -68,7 +68,6 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	reqLogger.Info("Reconciling grafana11")
 	grafana := &grafanav1alpha1.Grafana{}
-	reqLogger.Info("step1")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.View.Emails, "viewer")
@@ -78,7 +77,6 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("step2")
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
 
@@ -93,18 +91,17 @@ func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req
 	orgID := retrievedOrg.ID
 	getallUser, _ := client.GetAllUsers(ctx)
 	getuserOrg, _ := client.GetOrgUsers(ctx, orgID)
-	reqLogger.Info("step3")
 	if err1 != nil {
 		log.Error(err1, "Unable to create Grafana client")
 		return ctrl.Result{}, err1
 	} else {
-		reqLogger.Info("step4")
 		for _, email := range emails {
+			reqLogger.Info("1")
 			var orguserfound bool
 			for _, orguser := range getuserOrg {
 				UserOrg := orguser.Email
-				reqLogger.Info(UserOrg)
 				if email == UserOrg {
+					reqLogger.Info("2")
 					orguserfound = true
 					reqLogger.Info("users already in")
 					break
@@ -114,10 +111,11 @@ func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req
 				continue
 			}
 			for _, user := range getallUser {
-				reqLogger.Info("step5")
+				reqLogger.Info("3")
 				UserEmail := user.Email
 				if email == UserEmail {
 					reqLogger.Info("user is exist")
+					reqLogger.Info("4")
 					newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
 					_, err := client.AddOrgUser(ctx, newuser, orgID)
 					if err != nil {
