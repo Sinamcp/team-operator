@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +28,6 @@ import (
 
 	"github.com/grafana-tools/sdk"
 	grafanav1alpha1 "github.com/snapp-incubator/team-operator/apis/grafana/v1alpha1"
-	teamv1alpha1 "github.com/snapp-incubator/team-operator/apis/team/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -69,22 +67,7 @@ func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling grafana")
 	grafana := &grafanav1alpha1.Grafana{}
-	team := &teamv1alpha1.Team{}
 
-	err := r.Client.Get(context.TODO(), req.NamespacedName, team)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return ctrl.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
-		return ctrl.Result{}, err
-	} else {
-		log.Info("team is found and teamName is : " + team.Name)
-
-	}
 	reqLogger.Info("step1")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
 	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
