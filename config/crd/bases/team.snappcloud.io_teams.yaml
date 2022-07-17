@@ -70,30 +70,6 @@ spec:
                         type: array
                     type: object
                 type: object
-              grafana:
-                properties:
-                  admin:
-                    properties:
-                      emails:
-                        items:
-                          type: string
-                        type: array
-                    type: object
-                  edit:
-                    properties:
-                      emails:
-                        items:
-                          type: string
-                        type: array
-                    type: object
-                  view:
-                    properties:
-                      emails:
-                        items:
-                          type: string
-                        type: array
-                    type: object
-                type: object
             type: object
         type: object
     served: true

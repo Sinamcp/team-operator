@@ -32,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	userv1 "github.com/openshift/api/user/v1"
-	teamv1alpha1 "github.com/snapp-incubator/team-operator/api/v1alpha1"
-	"github.com/snapp-incubator/team-operator/controllers"
+
+	grafanav1alpha1 "github.com/snapp-incubator/team-operator/apis/grafana/v1alpha1"
+	teamv1alpha1 "github.com/snapp-incubator/team-operator/apis/team/v1alpha1"
+	grafanacontrollers "github.com/snapp-incubator/team-operator/controllers/grafana"
+	teamcontrollers "github.com/snapp-incubator/team-operator/controllers/team"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -48,6 +51,7 @@ func init() {
 	utilruntime.Must(teamv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 
+	utilruntime.Must(grafanav1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -81,11 +85,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.TeamReconciler{
+	if err = (&teamcontrollers.TeamReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Team")
+		os.Exit(1)
+	}
+	if err = (&grafanacontrollers.GrafanaReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Grafana")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

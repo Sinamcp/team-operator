@@ -23,16 +23,10 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// TeamSpec defines the desired state of Team
-type TeamSpec struct {
+// GrafanaSpec defines the desired state of Grafana
+type GrafanaSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Team. Edit team_types.go to remove/update
-	Argo    TeamCICD    `json:"argo,omitempty"`
-	Grafana TeamGrafana `json:"grafana,omitempty"`
-}
-type TeamGrafana struct {
 	Admin GrafanaUserAdmin `json:"admin,omitempty"`
 	Edit  GrafanaUserEdit  `json:"edit,omitempty"`
 	View  GrafanaUserview  `json:"view,omitempty"`
@@ -46,47 +40,27 @@ type GrafanaUserEdit struct {
 type GrafanaUserview struct {
 	Emails []string `json:"emails,omitempty"`
 }
-type TeamCICD struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Admin ArgocdCIAdmin `json:"admin,omitempty"`
-	View  ArgocdCIView  `json:"view,omitempty"`
-}
-type ArgocdCIAdmin struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	CIPass string `json:"ciPass,omitempty"`
-	//ArgocdToken string `json:"argocdToken,omitempty"`
-	Users []string `json:"users,omitempty"`
-}
-type ArgocdCIView struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	CIPass string `json:"ciPass,omitempty"`
-	//ArgocdToken string `json:"argocdToken,omitempty"`
-	Users []string `json:"users,omitempty"`
-}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Team is the Schema for the teams API
-type Team struct {
+// Grafana is the Schema for the grafanas API
+type Grafana struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec TeamSpec `json:"spec,omitempty"`
+	Spec GrafanaSpec `json:"spec,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// TeamList contains a list of Team
-type TeamList struct {
+// GrafanaList contains a list of Grafana
+type GrafanaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Team `json:"items"`
+	Items           []Grafana `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Team{}, &TeamList{})
+	SchemeBuilder.Register(&Grafana{}, &GrafanaList{})
 }

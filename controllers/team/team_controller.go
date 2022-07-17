@@ -21,15 +21,10 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-
-	//	"strconv"
-
-	//	"os"
 	"strings"
 
-	"github.com/grafana-tools/sdk"
 	userv1 "github.com/openshift/api/user/v1"
-	teamv1alpha1 "github.com/snapp-incubator/team-operator/api/v1alpha1"
+	teamv1alpha1 "github.com/snapp-incubator/team-operator/apis/team/v1alpha1"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -47,15 +42,6 @@ const (
 	userArgocRbacPolicyCM = "argocd-rbac-cm"
 	userArgocStaticUserCM = "argocd-cm"
 )
-
-const (
-	teamLabel = "snappcloud.io/team"
-)
-
-// Get Grafana URL and PassWord as a env.
-var grafanaPassword = "xAR6WJKrszFBJsnlHCdoeuA2w2Q10y9E7iJ3J46l3Vpk1yigQl"
-var grafanaUsername = "admin"
-var grafanaURL = "https://grafana.okd4.teh-1.snappcloud.io"
 
 //var logf = log.Log.WithName("controller_team")
 
@@ -101,12 +87,8 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		log.Info("team is found and teamName is : " + team.Name)
 
 	}
-	//r.createArgocdStaticAdminUser(ctx, req)
-	//r.createArgocdStaticViewUser(ctx, req)
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Admin.Emails, "admin")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.Edit.Emails, "editor")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, team.Spec.Grafana.View.Emails, "viewer")
-
+	r.createArgocdStaticAdminUser(ctx, req)
+	r.createArgocdStaticViewUser(ctx, req)
 	return ctrl.Result{}, nil
 }
 func (r *TeamReconciler) createArgocdStaticAdminUser(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -371,61 +353,6 @@ func (r *TeamReconciler) setRBACArgoCDViewUser(ctx context.Context, req ctrl.Req
 		log.Error(err, "marshal failed")
 	}
 	found.Data["policy.csv"] = fmt.Sprintf("%s%v  '  '", string(foundYaml), '\n')
-	return ctrl.Result{}, nil
-}
-
-func (r *TeamReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-	reqLogger.Info("Reconciling team")
-	ns := &corev1.Namespace{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
-
-	if err != nil {
-		log.Error(err, "Failed to get sina")
-		return ctrl.Result{}, err
-	}
-	org := ns.GetLabels()[teamLabel]
-	// Connecting to the Grafana API
-	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
-	retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
-	orgID := retrievedOrg.ID
-	getallUser, _ := client.GetAllUsers(ctx)
-	getuserOrg, _ := client.GetOrgUsers(ctx, orgID)
-	if err1 != nil {
-		log.Error(err1, "Unable to create Grafana client")
-		return ctrl.Result{}, err1
-	} else {
-		for _, email := range emails {
-			var orguserfound bool
-			for _, orguser := range getuserOrg {
-				UserOrg := orguser.Email
-				reqLogger.Info(UserOrg)
-				if email == UserOrg {
-					orguserfound = true
-					reqLogger.Info("users already in")
-					break
-				}
-			}
-			if orguserfound {
-				continue
-			}
-			for _, user := range getallUser {
-				UserEmail := user.Email
-				if email == UserEmail {
-					reqLogger.Info("user is exist")
-					newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
-					_, err := client.AddOrgUser(ctx, newuser, orgID)
-					if err != nil {
-						log.Error(err, "Failed to add user to  organization")
-					} else {
-						log.Info("ok")
-					}
-					break
-				}
-			}
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
