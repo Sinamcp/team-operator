@@ -32,11 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	userv1 "github.com/openshift/api/user/v1"
-
 	grafanav1alpha1 "github.com/snapp-incubator/team-operator/apis/grafana/v1alpha1"
 	teamv1alpha1 "github.com/snapp-incubator/team-operator/apis/team/v1alpha1"
 	grafanacontrollers "github.com/snapp-incubator/team-operator/controllers/grafana"
 	teamcontrollers "github.com/snapp-incubator/team-operator/controllers/team"
+	customwebhook "github.com/snapp-incubator/team-operator/custom_webhooks"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -100,6 +101,8 @@ func main() {
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+	hookServer := mgr.GetWebhookServer()
+	hookServer.Register("/validate-v1alpha1-grafanauser", &webhook.Admission{Handler: &customwebhook.GrafanaUserValidator{Client: mgr.GetClient()}})
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

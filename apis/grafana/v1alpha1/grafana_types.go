@@ -27,18 +27,9 @@ import (
 type GrafanaSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Admin GrafanaUserAdmin `json:"admin,omitempty"`
-	Edit  GrafanaUserEdit  `json:"edit,omitempty"`
-	View  GrafanaUserview  `json:"view,omitempty"`
-}
-type GrafanaUserAdmin struct {
-	Emails []string `json:"emails,omitempty"`
-}
-type GrafanaUserEdit struct {
-	Emails []string `json:"emails,omitempty"`
-}
-type GrafanaUserview struct {
-	Emails []string `json:"emails,omitempty"`
+	Admin []string `json:"admin,omitempty"`
+	Edit  []string `json:"edit,omitempty"`
+	View  []string `json:"view,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -19,7 +19,9 @@ package grafana
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,66 +67,94 @@ type GrafanaReconciler struct {
 func (r *GrafanaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
-
-	reqLogger.Info("Reconciling grafana11")
-	grafana := &grafanav1alpha1.Grafana{}
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Admin.Emails, "admin")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.Edit.Emails, "editor")
-	r.AddUsersToGrafanaOrgByEmail(ctx, req, grafana.Spec.View.Emails, "viewer")
-
-	return ctrl.Result{}, nil
-}
-func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, emails []string, role string) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
+	reqLogger.Info("Reconciling grafana")
 	ns := &corev1.Namespace{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: req.Namespace}, ns)
-
 	if err != nil {
 		log.Error(err, "Failed to get namespace")
 		return ctrl.Result{}, err
 	}
-	org := ns.GetLabels()[teamLabel]
-	// Connecting to the Grafana API
-	client, err1 := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
-	retrievedOrg, _ := client.GetOrgByOrgName(ctx, org)
+	org, ok := ns.Labels[teamLabel]
+	if !ok {
+		reqLogger.Info("Namespace does not have team label. Ignoring", "namespace", ns.Name, "team name ", org)
+		return ctrl.Result{}, nil
+	}
+	grafanaclient, err := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
+	if err != nil {
+		reqLogger.Error(err, "Unable to create Grafana client")
+		return ctrl.Result{}, err
+	}
+	retrievedOrg, err := grafanaclient.GetOrgByOrgName(ctx, org)
+	if err != nil {
+		if strings.Contains(err.Error(), "Organization not found") {
+			reqLogger.Error(err, "Unable to get organization")
+			return ctrl.Result{}, err
+		}
+	}
+	grafana := &grafanav1alpha1.Grafana{}
+	err = r.Client.Get(context.TODO(), req.NamespacedName, grafana)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return ctrl.Result{}, err
+	} else {
+		log.Info("grafana_org is found and orgName is : " + org)
+
+	}
+
+	_, err = r.AddUsersToGrafanaOrgByEmail(ctx, req, org, grafanaclient, retrievedOrg, grafana.Spec.Admin, "admin")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	_, err = r.AddUsersToGrafanaOrgByEmail(ctx, req, org, grafanaclient, retrievedOrg, grafana.Spec.Edit, "editor")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	_, err = r.AddUsersToGrafanaOrgByEmail(ctx, req, org, grafanaclient, retrievedOrg, grafana.Spec.View, "viewer")
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+func (r *GrafanaReconciler) AddUsersToGrafanaOrgByEmail(ctx context.Context, req ctrl.Request, org string, client *sdk.Client, retrievedOrg sdk.Org, emails []string, role string) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
+	// Retrieving the Organization Info
 	orgID := retrievedOrg.ID
+	orgName := retrievedOrg.Name
 	getallUser, _ := client.GetAllUsers(ctx)
 	getuserOrg, _ := client.GetOrgUsers(ctx, orgID)
-	if err1 != nil {
-		log.Error(err1, "Unable to create Grafana client")
-		return ctrl.Result{}, err1
-	} else {
-		for _, email := range emails {
-			reqLogger.Info("1")
-			var orguserfound bool
-			for _, orguser := range getuserOrg {
-				UserOrg := orguser.Email
-				if email == UserOrg {
-					reqLogger.Info("2")
-					orguserfound = true
-					reqLogger.Info("users already in")
-					break
-				}
+	for _, email := range emails {
+		var orguserfound bool
+		for _, orguser := range getuserOrg {
+			UserOrg := orguser.Email
+			if email == UserOrg {
+				orguserfound = true
+				reqLogger.Info(orguser.Email, "is already in", orgName)
+				break
 			}
-			if orguserfound {
-				continue
-			}
-			for _, user := range getallUser {
-				reqLogger.Info("3")
-				UserEmail := user.Email
-				if email == UserEmail {
-					reqLogger.Info("user is exist")
-					reqLogger.Info("4")
-					newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
-					_, err := client.AddOrgUser(ctx, newuser, orgID)
-					if err != nil {
-						log.Error(err, "Failed to add user to  organization")
-					} else {
-						log.Info("ok")
-					}
-					break
+		}
+		if orguserfound {
+			continue
+		}
+		for _, user := range getallUser {
+			UserEmail := user.Email
+			if email == UserEmail {
+				newuser := sdk.UserRole{LoginOrEmail: email, Role: role}
+				_, err := client.AddOrgUser(ctx, newuser, orgID)
+				if err != nil {
+					log.Error(err, "Failed to add", user.Name, "to", orgName)
+				} else {
+					log.Info(UserEmail, "is added to", orgName)
 				}
+				break
 			}
 		}
 	}
