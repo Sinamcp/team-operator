@@ -102,7 +102,7 @@ func main() {
 	}
 	//+kubebuilder:scaffold:builder
 	hookServer := mgr.GetWebhookServer()
-	hookServer.Register("/validate-v1alpha1-grafanauser", &webhook.Admission{Handler: &customwebhook.GrafanaValidator{Client: mgr.GetClient()}})
+	hookServer.Register("/validate-v1alpha1-grafana", &webhook.Admission{Handler: &customwebhook.GrafanaValidator{Client: mgr.GetClient()}})
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
