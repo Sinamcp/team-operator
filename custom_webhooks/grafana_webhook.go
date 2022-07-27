@@ -12,7 +12,7 @@ import (
 
 //+kubebuilder:webhook:path=/validate-v1-resource-quota,mutating=false,failurePolicy=fail,sideEffects=None,groups="",resources=resourcequotas,verbs=create;update;delete,versions=v1,name=vresourcequota.kb.io,admissionReviewVersions={v1,v1beta1}
 
-type GrafanaUserValidator struct {
+type GrafanaValidator struct {
 	Client client.Client
 }
 
@@ -21,7 +21,7 @@ var grafanaPassword = "xAR6WJKrszFBJsnlHCdoeuA2w2Q10y9E7iJ3J46l3Vpk1yigQl"
 var grafanaUsername = "admin"
 var grafanaURL = "https://grafana.okd4.teh-1.snappcloud.io"
 
-func (v *GrafanaUserValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (v *GrafanaValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	grafana := &grafanav1alpha1.Grafana{}
 	responseAdmin := v.ValidateEmailExist(ctx, req, grafana.Spec.Admin)
 	responseEdit := v.ValidateEmailExist(ctx, req, grafana.Spec.Edit)
@@ -34,7 +34,7 @@ func (v *GrafanaUserValidator) Handle(ctx context.Context, req admission.Request
 	}
 }
 
-func (v *GrafanaUserValidator) ValidateEmailExist(ctx context.Context, req admission.Request, emails []string) admission.Response {
+func (v *GrafanaValidator) ValidateEmailExist(ctx context.Context, req admission.Request, emails []string) admission.Response {
 	client, _ := sdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", grafanaUsername, grafanaPassword), sdk.DefaultHTTPClient)
 	grafanalUsers, _ := client.GetAllUsers(ctx)
 	var Users = make([]string, 10)

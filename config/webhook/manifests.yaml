@@ -1,4 +1,3 @@
-
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -13,18 +12,18 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-v1-resource-quota
+      path: /validate-grafana-snappcloud-io-v1alpha1-grafana
   failurePolicy: Fail
-  name: vresourcequota.kb.io
+  name: vgarafanauser.kb.io
   rules:
   - apiGroups:
-    - ""
+    - grafana.snappcloud.io
     apiVersions:
-    - v1
+    - v1alpha1
     operations:
     - CREATE
     - UPDATE
     - DELETE
     resources:
-    - resourcequotas
+    - granafas
   sideEffects: None
