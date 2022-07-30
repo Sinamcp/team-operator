@@ -26,5 +26,5 @@ webhooks:
     - UPDATE
     - DELETE
     resources:
-    - grafana
+    - grafanas
   sideEffects: None
