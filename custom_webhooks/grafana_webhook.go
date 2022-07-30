@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-//+kubebuilder:webhook:path=/validate-v1alpha1-grafana,mutating=false,failurePolicy=fail,sideEffects=None,groups="",resources=grafana,verbs=create;update;delete,versions=v1,name=v1alpha1grafana.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/validate-v1alpha1-grafana,mutating=false,failurePolicy=fail,sideEffects=None,groups="",resources=grafanas,verbs=create;update;delete,versions=v1,name=v1alpha1grafana.kb.io,admissionReviewVersions={v1,v1beta1}
 
 type GrafanaValidator struct {
 	Client client.Client
