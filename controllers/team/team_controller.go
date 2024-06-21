@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	userv1 "github.com/openshift/api/user/v1"
-	teamv1alpha1 "github.com/snapp-incubator/team-operator/api/v1alpha1"
+	teamv1alpha1 "github.com/snapp-incubator/team-operator/apis/team/v1alpha1"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -89,7 +89,6 @@ func (r *TeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	r.createArgocdStaticAdminUser(ctx, req)
 	r.createArgocdStaticViewUser(ctx, req)
-
 	return ctrl.Result{}, nil
 }
 func (r *TeamReconciler) createArgocdStaticAdminUser(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

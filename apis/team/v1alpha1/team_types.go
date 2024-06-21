@@ -31,6 +31,7 @@ type TeamSpec struct {
 	// Foo is an example field of Team. Edit team_types.go to remove/update
 	Argo TeamCICD `json:"argo,omitempty"`
 }
+
 type TeamCICD struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file

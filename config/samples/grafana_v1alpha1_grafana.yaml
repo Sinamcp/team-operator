@@ -1,0 +1,7 @@
+apiVersion: grafana.snappcloud.io/v1alpha1
+kind: Grafana
+metadata:
+  name: grafana-sample
+spec:
+  # Add fields here
+  foo: bar
